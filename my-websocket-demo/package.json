@@ -1,0 +1,17 @@
+{
+  "name": "my-websocket-demo",
+  "version": "0.3.0",
+  "description": "WebSocket 渐进式学习项目 — 从裸 ws 库到生产级实践",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "step:chat": "node steps/01-chat-broadcast/server.js",
+    "step:reconnect": "node steps/02-auto-reconnect/server.js",
+    "step:heartbeat": "node steps/03-heartbeat/server.js"
+  },
+  "keywords": ["websocket", "learning", "ws"],
+  "license": "ISC",
+  "dependencies": {
+    "ws": "^8.21.0"
+  }
+}

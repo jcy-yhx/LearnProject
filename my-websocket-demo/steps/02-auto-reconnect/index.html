@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>不掉线的计数器</title>
+    <style>
+        body { font-family: Arial; padding: 40px; text-align: center; }
+        #status { padding: 10px 20px; border-radius: 20px; display: inline-block; }
+        .online  { background: #4caf50; color: white; }
+        .offline { background: #f44336; color: white; }
+        #number {
+            font-size: 80px; margin: 30px 0; font-weight: bold; color: #2196F3;
+        }
+        #log {
+            margin-top: 30px; color: #666; font-size: 14px;
+            border-top: 1px solid #ccc; padding-top: 20px;
+            max-height: 200px; overflow-y: auto; text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <h2>📊 实时计数器（自动重连）</h2>
+    <div id="status" class="online">🟢 已连接</div>
+    <div id="number">0</div>
+    <div style="color: #999; font-size: 14px;">（每 2 秒自动更新）</div>
+    <div id="log">系统日志：初始化完成</div>
+
+    <script>
+        /**
+         * 本步骤核心知识点：
+         *   - connect() 函数封装
+         *   - onclose 中指数退避重连
+         *   - 重连后服务端下发最新数据 → 断线续传
+         */
+
+        let ws = null;
+        let reconnectTimer = null;
+        let attempts = 0;
+
+        const statusEl = document.getElementById('status');
+        const numberEl = document.getElementById('number');
+        const logEl   = document.getElementById('log');
+
+        // ---------- 工具函数 ----------
+
+        function addLog(msg) {
+            const time = new Date().toLocaleTimeString();
+            logEl.innerHTML += `<br>${time} - ${msg}`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function setStatus(online) {
+            if (online) {
+                statusEl.textContent = '🟢 已连接';
+                statusEl.className   = 'online';
+            } else {
+                statusEl.textContent = `🔴 断开连接 (${attempts}s 后重试)`;
+                statusEl.className   = 'offline';
+            }
+        }
+
+        // ---------- 核心：建立连接 ----------
+
+        function connect() {
+            if (ws && ws.readyState === WebSocket.OPEN) return;
+
+            addLog('正在连接服务器...');
+            ws = new WebSocket('ws://localhost:8080');
+
+            ws.onopen = function () {
+                addLog('✅ 连接成功！');
+                attempts = 0;
+                setStatus(true);
+                if (reconnectTimer) {
+                    clearTimeout(reconnectTimer);
+                    reconnectTimer = null;
+                }
+            };
+
+            ws.onmessage = function (event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'counter') {
+                        numberEl.textContent = data.payload;
+                        setStatus(true);    // 收到数据 = 连接正常
+                    }
+                } catch (e) { /* 非 JSON 数据忽略 */ }
+            };
+
+            // ---------- 重连逻辑 ----------
+
+            ws.onclose = function () {
+                addLog('❌ 连接断开');
+                setStatus(false);
+
+                // 指数退避：1s → 2s → 4s → 8s → ... → 最大 30s
+                const delay = Math.min(1000 * Math.pow(2, attempts), 30000);
+                attempts++;
+
+                if (reconnectTimer) clearTimeout(reconnectTimer);
+                reconnectTimer = setTimeout(() => {
+                    addLog(`⏳ 正在尝试第 ${attempts} 次重连...`);
+                    connect();
+                }, delay);
+            };
+
+            ws.onerror = function (err) {
+                console.error('WebSocket 错误:', err);
+                // onerror 之后会触发 onclose，重连逻辑在 onclose 里
+            };
+        }
+
+        // ---------- 生命周期 ----------
+
+        window.onload = connect;
+
+        window.onbeforeunload = function () {
+            if (ws) ws.close();
+            if (reconnectTimer) clearTimeout(reconnectTimer);
+        };
+    </script>
+</body>
+</html>

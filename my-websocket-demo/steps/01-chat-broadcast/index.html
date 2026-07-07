@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>极简 WebSocket 聊天室</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        #log {
+            list-style: none; padding: 0; max-height: 400px; overflow-y: auto;
+            border: 1px solid #ccc; padding: 10px;
+        }
+        #log li { padding: 5px 0; border-bottom: 1px solid #f0f0f0; }
+        input { width: 300px; padding: 8px; }
+        button { padding: 8px 20px; }
+    </style>
+</head>
+<body>
+    <h2>💬 聊天室 (WebSocket)</h2>
+
+    <ul id="log"></ul>
+
+    <div id="input-area">
+        <input id="msgInput" type="text" placeholder="输入消息，按回车发送" />
+        <button onclick="sendMessage()">发送</button>
+    </div>
+
+    <script>
+        // ===== 1. 连接服务器 =====
+        const ws = new WebSocket('ws://localhost:8080');
+
+        ws.onopen = function () {
+            addLog('🟢 已连接到服务器');
+        };
+
+        // ===== 2. 接收消息 =====
+        ws.onmessage = function (event) {
+            addLog(event.data);
+        };
+
+        // ===== 3. 断开提示 =====
+        ws.onclose = function () {
+            addLog('🔴 连接已断开');
+        };
+
+        // ===== 辅助函数 =====
+        function addLog(text) {
+            const log = document.getElementById('log');
+            const li = document.createElement('li');
+            li.textContent = text;
+            log.appendChild(li);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('msgInput');
+            const text = input.value.trim();
+            if (text === '') return;
+
+            ws.send(text);
+            addLog('🙋 (我): ' + text);
+            input.value = '';
+        }
+
+        // 按回车发送
+        document.getElementById('msgInput')
+            .addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') sendMessage();
+            });
+    </script>
+</body>
+</html>

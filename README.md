@@ -5,3 +5,4 @@
 | 项目 | 涉及技术 |
 |------|----------|
 | [deploy-learn-demo](./deploy-learn-demo/) | Docker, Nginx, Docker Compose |
+| [my-websocket-demo](./my-websocket-demo/) | WebSocket, ws |
