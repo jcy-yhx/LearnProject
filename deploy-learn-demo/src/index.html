@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>我的第一个部署项目</title>
+    <style>
+        body { font-family: Arial; text-align: center; padding: 50px; background: #f0f0f0; }
+        h1 { color: #333; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Hello Docker + Nginx!</h1>
+    <p>当前时间: <span id="time"></span></p>
+    <button onclick="fetchHello()">调用后端 API</button>
+    <p id="result"></p>
+
+    <script>
+        function updateTime() {
+            document.getElementById('time').textContent = new Date().toLocaleString('zh-CN');
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        async function fetchHello() {
+            const res = await fetch('/api/hello');
+            const data = await res.text();
+            document.getElementById('result').textContent = data;
+        }
+    </script>
+</body>
+</html>
